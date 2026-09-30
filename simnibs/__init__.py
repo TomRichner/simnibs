@@ -15,7 +15,7 @@ from .utils.transformations import (
     atlas2subject,
 )
 from .utils.file_finder import *
-from .utils.nnav import localite, softaxic, brainsight, ant
+from .utils.nnav import localite, softaxic, brainsight, ant, nexstim
 from .utils.mesh_element_properties import ElementTags
 from .simulation import sim_struct
 from .simulation import fem, biot_savart

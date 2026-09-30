@@ -1,17 +1,64 @@
 import pytest
 import os
+import json
 import numpy as np
 import tempfile
 import warnings
 
 from simnibs import SIMNIBSDIR
 from simnibs.simulation.sim_struct import TMSLIST, POSITION
-from simnibs.utils.nnav import localite, softaxic, brainsight, ant
+from simnibs.utils.nnav import localite, softaxic, brainsight, ant, nexstim
 
 
 FIXTURE_DIR = os.path.join(
     SIMNIBSDIR, "_internal_resources", "testing_files", "nnav_testdata"
 )
+
+
+class TestNexstim:
+    def test_read_normalized_interchange(self, tmp_path):
+        document = {
+            "schema_version": "1.0.0",
+            "coordinate_frame": "NIfTI_RAS_mm",
+            "normalized": True,
+            "axis_mapping": {"status": "validated"},
+            "coil_model": "synthetic_coil.tcd",
+            "positions": [
+                {
+                    "stimulation_key": "stim_1",
+                    "name": "Synthetic position",
+                    "matsimnibs": np.eye(4).tolist(),
+                    "didt_a_per_s": 1.0,
+                }
+            ],
+        }
+        filename = tmp_path / "nexstim.json"
+        filename.write_text(json.dumps(document), encoding="utf-8")
+
+        tmslist = nexstim().read(filename)
+
+        assert tmslist.fnamecoil == "synthetic_coil.tcd"
+        assert len(tmslist.pos) == 1
+        assert tmslist.pos[0].name == "Synthetic position"
+        assert tmslist.pos[0].didt == 1.0
+        assert np.allclose(tmslist.pos[0].matsimnibs, np.eye(4))
+
+    def test_rejects_unvalidated_axes_and_missing_coil(self, tmp_path):
+        document = {
+            "schema_version": "1.0.0",
+            "coordinate_frame": "NIfTI_RAS_mm",
+            "normalized": True,
+            "axis_mapping": {"status": "unvalidated"},
+            "positions": [{"matsimnibs": np.eye(4).tolist(), "didt_a_per_s": 1.0}],
+        }
+        filename = tmp_path / "nexstim.json"
+        filename.write_text(json.dumps(document), encoding="utf-8")
+        with pytest.raises(ValueError, match="axis mapping"):
+            nexstim().read(filename, coil_file="synthetic.tcd")
+        document["axis_mapping"]["status"] = "validated"
+        filename.write_text(json.dumps(document), encoding="utf-8")
+        with pytest.raises(ValueError, match="coil model"):
+            nexstim().read(filename)
 
 
 ## LOCALITE test files and data ##

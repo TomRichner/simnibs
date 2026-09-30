@@ -2,6 +2,10 @@
 
 Changelog
 ===========
+Unreleased
+----------
+  * Added strict import of neutral, NIfTI-RAS Nexstim pose interchange files.
+
 4.6.0
 ------
   * Improved segmentation performance of :ref:`charm <head_modeling_tutorial>`, based on a :ref:`new probabilistic atlas <publications>`, in particular when supplying only a T1-weighted image. NOTE:  The command line option  --useatlasv1_0 switches back to the OLD atlas.

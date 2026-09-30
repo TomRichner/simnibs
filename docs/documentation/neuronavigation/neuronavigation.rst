@@ -10,6 +10,7 @@ Neuronavigation Data Import/Export
    brainsight
    softaxic
    ant
+   nexstim
 
 General Notes
 -------------
