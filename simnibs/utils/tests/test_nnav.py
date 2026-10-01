@@ -60,6 +60,25 @@ class TestNexstim:
         with pytest.raises(ValueError, match="coil model"):
             nexstim().read(filename)
 
+    def test_assumed_axes_and_didt_require_explicit_opt_in(self, tmp_path):
+        document = {
+            "schema_version": "1.0.0",
+            "coordinate_frame": "NIfTI_RAS_mm",
+            "normalized": False,
+            "axis_mapping": {"status": "assumed"},
+            "didt_calibration": {"status": "assumed_not_measured"},
+            "coil_model": "generic_70mm_figure8.ccd",
+            "positions": [
+                {"matsimnibs": np.eye(4).tolist(), "didt_a_per_s": 40e6}
+            ],
+        }
+        filename = tmp_path / "nexstim_assumed.json"
+        filename.write_text(json.dumps(document), encoding="utf-8")
+        with pytest.raises(ValueError, match="axis mapping"):
+            nexstim().read(filename)
+        tmslist = nexstim().read(filename, allow_assumed=True)
+        assert tmslist.pos[0].didt == 40e6
+
 
 ## LOCALITE test files and data ##
 @pytest.fixture()

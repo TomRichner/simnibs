@@ -18,6 +18,9 @@ The reader deliberately rejects ambiguous inputs. The JSON must declare:
 
 Normalized positions use :code:`didt=1 A/s`. Their fields are suitable for
 relative spatial comparisons only and must not be reported as absolute V/m.
+Exploratory files may instead carry explicitly assumed axes or dI/dt scaling.
+They are rejected unless :code:`allow_assumed=True` is passed, and their fields
+must still be labeled assumed rather than calibrated.
 
 .. code-block:: python
 
@@ -26,6 +29,12 @@ relative spatial comparisons only and must not be reported as absolute V/m.
    tms_list = simnibs.nexstim().read(
        "nexstim_poses.json",
        coil_file="path/to/validated_coil.tcd",
+   )
+
+   exploratory = simnibs.nexstim().read(
+       "nexstim_assumed_poses.json",
+       coil_file="path/to/generic_70mm_figure8.ccd",
+       allow_assumed=True,
    )
 
    # Add tms_list to a SESSION after generating the subject head mesh.

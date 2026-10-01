@@ -53,7 +53,7 @@ class nexstim:
 
     SCHEMA_VERSION = "1.0.0"
 
-    def read(self, fn, coil_file=None):
+    def read(self, fn, coil_file=None, allow_assumed=False):
         """Read a neutral Nexstim JSON pose export.
 
         Parameters
@@ -63,6 +63,10 @@ class nexstim:
         coil_file : str, optional
             SimNIBS coil model override. Required when the JSON does not name a
             coil model.
+        allow_assumed : bool, optional
+            Permit an interchange explicitly labeled with assumed coil axes or
+            dI/dt scaling. Default false. Such simulations are exploratory and
+            must not be described as calibrated absolute fields.
 
         Returns
         -------
@@ -81,7 +85,10 @@ class nexstim:
         if document.get("coordinate_frame") != "NIfTI_RAS_mm":
             raise ValueError("Nexstim interchange coordinates must be NIfTI_RAS_mm.")
         axis_mapping = document.get("axis_mapping", {})
-        if axis_mapping.get("status") != "validated":
+        axis_status = axis_mapping.get("status")
+        if axis_status != "validated" and not (
+            allow_assumed and axis_status == "assumed"
+        ):
             raise ValueError(
                 "Nexstim coil-axis mapping is not validated; refusing to create "
                 "simulation positions."
@@ -91,6 +98,12 @@ class nexstim:
             raise ValueError("Nexstim interchange must declare normalized true or false.")
         if not normalized and document.get("didt_calibration") is None:
             raise ValueError("Absolute Nexstim poses require dI/dt calibration metadata.")
+        calibration = document.get("didt_calibration") or {}
+        if calibration.get("status") == "assumed_not_measured" and not allow_assumed:
+            raise ValueError(
+                "Nexstim dI/dt is assumed rather than measured; pass "
+                "allow_assumed=True for an exploratory simulation."
+            )
 
         fnamecoil = coil_file or document.get("coil_model")
         if not fnamecoil:
